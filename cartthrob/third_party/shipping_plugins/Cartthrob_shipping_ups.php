@@ -509,7 +509,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 						$shipping['price'][] = number_format((string) $rating->TotalCharges->MonetaryValue,2,".",",");
 					}
 					$shipping['option_value'][]	= (string) $rating->Service->Code;
-					$shipping['option_name'][]  = $this->shipping_methods($this->prefix.$rating->Service->Code); 
+					$shipping['option_name'][]  = $this->shipping_methods( (string) $rating->Service->Code, $this->prefix); 
 					$shipping['error_message']	= NULL; 
 					$this->core->cart->set_custom_data("shipping_error", ""); 
 					
@@ -633,7 +633,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		}
  		if ($number)
 		{
-			if (array_key_exists($number, $this->shipping_methods))
+			if (isset($this->shipping_methods[$number] ))
 			{
 				return $this->shipping_methods[$number]; 
 			}
