@@ -576,7 +576,10 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		}
 		
 		$shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
-		
+		if (empty($shipping_data['option_value']) && empty($shipping_data['price']))
+ 		{
+			$shipping_data = $this->get_live_rates(); 
+		}
 	 	if(!$this->core->cart->shipping_info('shipping_option'))
 		{
 			$temp_key = FALSE; 
@@ -685,7 +688,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		
 		return $options;
 	}
-
+	// creates a hash value to compare 
 	function cart_hash($shipping = NULL )
 	{
 		// hashing the cart data, so we can check later if the cart has been updated      
