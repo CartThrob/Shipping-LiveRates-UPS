@@ -8,6 +8,14 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 	public $html = ''; 
  
 	public $settings = array(
+		array(
+			'name' => 'Set shipping to zero, if cart weight is zero',
+			'note'=> 'By default this plugin will assume a cart weight of at least one pound. If there is a possibility that your customers may purchase a cart full of items with zero weight (digital downloads) you may want to set this to "YES" so that they will not be charged if the entire cart weight is zero',
+			'short_name' => 'no_shipping_on_zero_weight_carts',
+			'type' => 'select',
+			'options' => array('yes' => 'Yes', 'no' => 'No'),
+			'default'	=> 'yes',
+		),
  		array(
 			'name' => 'API Access Key',
 			'short_name' => 'access_key',
@@ -344,7 +352,6 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		$this->EE =& get_instance(); 
 		$this->EE->load->library('cartthrob_shipping_plugins');
  		$this->core->cart->set_custom_data("shipping_error", ""); 
-		$this->core->cart->save(); 
 
  		$orig_state = 	($this->plugin_settings('origination_state'))? $this->plugin_settings('origination_state') : $this->EE->cartthrob_shipping_plugins->customer_location_defaults('state') ;  
 		$orig_zip = 	($this->plugin_settings('origination_zip'))? $this->plugin_settings('origination_zip') : $this->EE->cartthrob_shipping_plugins->customer_location_defaults("zip");   
@@ -485,7 +492,6 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 				// update cart hash and shipping hash
 			$this->cart_hash($shipping); 
 			$this->core->cart->set_custom_data("shipping_error", $shipping['error_message']); 
-			$this->core->cart->save(); 
 			
 			return $shipping;
 		}
@@ -509,7 +515,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 						$shipping['price'][] = number_format((string) $rating->TotalCharges->MonetaryValue,2,".",",");
 					}
 					$shipping['option_value'][]	= (string) $rating->Service->Code;
-					$shipping['option_name'][]  = $this->shipping_methods( (string) $rating->Service->Code, $this->prefix); 
+					$shipping['option_name'][]  = $this->shipping_methods((string) $rating->Service->Code); 
 					$shipping['error_message']	= NULL; 
 					$this->core->cart->set_custom_data("shipping_error", ""); 
 					
@@ -522,7 +528,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		$available_shipping =array(); 
 		foreach ($shipping['option_value'] as $key => $value)
 		{
-			if ( $this->plugin_settings($this->prefix.$value) !="n" )
+			if ( $this->plugin_settings('c_'.$value) !="n" )
 			{
 				$available_shipping['price'][$key] 				= $shipping['price'][$key]; 
 				$available_shipping['option_value'][$key]		= $shipping['option_value'][$key]; 
@@ -550,36 +556,94 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 			$this->core->cart->set_custom_data("shipping_error", $available_shipping['error_message']); 
 			
 		}
-		$this->core->cart->save(); 
-		
 		return $available_shipping; 
 	}
 	// END
+
+ 	function shipping_methods($number = NULL, $prefix = NULL)
+	{
+		if (isset($this->prefix))
+		{
+			$prefix = $this->prefix; 
+		}
+ 		if ($number)
+		{
+			if (array_key_exists($number, $this->shipping_methods))
+			{
+				return $this->shipping_methods[$number]; 
+			}
+			else
+			{
+				return "--"; 
+			}
+		}
+		foreach ($this->shipping_methods as $key => $method)
+		{
+ 			if ($this->plugin_settings($prefix.$key) =="y")
+			{
+				$available_options[$key] = $method; 
+			}
+ 
+		}
+		return $available_options; 
+	}
+	// END
+	public function plugin_shipping_options()
+	{
+		$options = array(); 
+ 		// GETTING THE RATES FROM SESSION
+		$shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
+		
+		/*
+ 		if (!$shipping_data)
+		{
+			// IF NONE ARE IN SESSION, WE WILL *TRY* TO GET RATES BASED ON CURRENT CART CONTENTS
+			$shipping_data = $this->get_live_rates(); 
+  		}
+ 		*/
+		$shipping_data = $this->get_live_rates(); 
+ 		
+ 		if (!empty($shipping_data['option_value'] ))
+		{
+			foreach ($shipping_data['option_value'] as $key => $value)
+			{
+				$options[] = array(
+					'rate_short_name' => $value,
+					'price' => $shipping_data['price'][$key],
+					'rate_price' => $shipping_data['price'][$key],
+					'rate_title' => $shipping_data['option_name'][$key],
+				);
+			}
+ 		}
+		
+		
+		return $options;
+	}
 	function get_shipping()
 	{
 		$cart_hash = $this->core->cart->custom_data('cart_hash'); 
-
+		
+		$this->cart_hash(); 
+		if ($this->core->cart->weight() <=0)
+		{
+			// perhaps you have all digital items
+			if ($this->plugin_settings('no_shipping_on_zero_weight_carts'))
+			{
+				return 0; 
+			}
+		}
  		if ($this->core->cart->count() <= 0 || $this->core->cart->shippable_subtotal() <= 0)
 		{
 			return 0;
 		}
 		
- 		if ($cart_hash != $this->cart_hash())
+ 		if ($cart_hash != md5(serialize($this->core->cart->items_array())))
 		{
-			$this->core->cart->set_custom_data('shipping_requires_update', $this->title ); 
-			$this->core->cart->save(); 
-		}
-		else
-		{
-			$this->core->cart->set_custom_data('shipping_requires_update', NULL ); 
-			$this->core->cart->save(); 
+			return 0; 
 		}
 		
 		$shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
-		if (empty($shipping_data['option_value']) && empty($shipping_data['price']))
- 		{
-			$shipping_data = $this->get_live_rates(); 
-		}
+		
 	 	if(!$this->core->cart->shipping_info('shipping_option'))
 		{
 			$temp_key = FALSE; 
@@ -628,74 +692,14 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 		}
 		return 0; 
 	}
- 	function shipping_methods($number = NULL, $prefix = NULL)
-	{
-		if (isset($this->prefix))
-		{
-			$prefix = $this->prefix; 
-		}
- 		if ($number)
-		{
-			if (isset($this->shipping_methods[$number] ))
-			{
-				return $this->shipping_methods[$number]; 
-			}
-			else
-			{
-				return "--"; 
-			}
-		}
-		foreach ($this->shipping_methods as $key => $method)
-		{
- 			if ($this->plugin_settings($prefix.$key) =="y")
-			{
-				$available_options[$key] = $method; 
-			}
- 
-		}
-		return $available_options; 
-	}
-	// END
-	public function plugin_shipping_options()
-	{
-		$options = array(); 
- 		// GETTING THE RATES FROM SESSION
-		$shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
-		$this->core->cart->save(); 
-		
-		/*
- 		if (!$shipping_data)
-		{
-			// IF NONE ARE IN SESSION, WE WILL *TRY* TO GET RATES BASED ON CURRENT CART CONTENTS
-			$shipping_data = $this->get_live_rates(); 
-  		}
- 		*/
-		$shipping_data = $this->get_live_rates(); 
- 		
- 		if (!empty($shipping_data['option_value'] ))
-		{
-			foreach ($shipping_data['option_value'] as $key => $value)
-			{
-				$options[] = array(
-					'rate_short_name' => $value,
-					'price' => $shipping_data['price'][$key],
-					'rate_price' => $shipping_data['price'][$key],
-					'rate_title' => $shipping_data['option_name'][$key],
-				);
-			}
- 		}
-		
-		
-		return $options;
-	}
 	// creates a hash value to compare 
 	function cart_hash($shipping = NULL )
 	{
 		// hashing the cart data, so we can check later if the cart has been updated      
 		$cart_hash = md5(serialize($this->core->cart->items_array())); 
+		$this->core->cart->set_custom_data('cart_hash', $cart_hash); 
  		if ($shipping)
 		{
-			$this->core->cart->set_custom_data('cart_hash', $cart_hash); 
 			$this->core->cart->set_custom_data(ucfirst(get_class($this)), $shipping);
 		}  
 		$this->core->cart->save(); 
