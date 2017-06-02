@@ -1,7 +1,7 @@
 cartthrob-live-rates
 ================================
 
-**Note**: this is compatible with CartThrob for EE2 and EE3
+**Note**: Compatible with CartThrob for EE2 and EE3
 
 To implement live rates shipping plugins place them in your cartthrob folder in the following locations:  
 
