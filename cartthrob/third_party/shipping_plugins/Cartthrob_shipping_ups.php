@@ -119,6 +119,30 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 			),
 		),
 		array(
+			'name' => 'Origination State',
+			'short_name' => 'origination_state',
+			'type'			=> 'select',
+			'attributes'		=> array(
+				'class'	=> 'states_blank',
+			),
+			
+		),
+
+		array(
+			'name' => 'Origination Zip',
+			'short_name' => 'origination_zip',
+			'type' => 'text'
+		),
+		array(	
+			'name'			=> 'Origination Country', 
+			'short_name'	=> 'orig_country_code',
+			'type'			=> 'select',
+			'default'		=> 'USA',
+			'attributes'		=> array(
+				'class'	=> 'countries_blank',
+			),
+		),
+		array(
 			'name' => "Delivery Type Default" ,
 			'short_name' => 'destination_res_com',
 			'type' => 'radio',
@@ -349,7 +373,7 @@ class Cartthrob_shipping_ups extends CartThrob_shipping
 	
 	function get_live_rates($option_value="ALL")
 	{
-		$this->EE =& get_instance(); 
+		$this->EE = get_instance(); 
 		$this->EE->load->library('cartthrob_shipping_plugins');
  		$this->core->cart->set_custom_data("shipping_error", ""); 
 
