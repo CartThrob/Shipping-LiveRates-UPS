@@ -1,0 +1,16 @@
+{
+  "name": "fostermadeco/cartthrob_shipping_ups",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Foster Made",
+      "email": "support@cartthrob.com"
+    }
+  ],
+  "require": {},
+  "autoload": {
+    "classmap": [
+      "src/Cartthrob_shipping_ups.php"
+    ]
+  }
+}

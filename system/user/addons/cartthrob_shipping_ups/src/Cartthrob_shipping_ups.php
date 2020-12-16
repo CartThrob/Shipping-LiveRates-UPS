@@ -1,8 +1,9 @@
 <?php if ( ! defined('CARTTHROB_PATH')) Cartthrob_core::core_error('No direct script access allowed');
 
+use CartThrob\Plugins\Shipping\ShippingPlugin;
 use Money\Money;
 
-class Cartthrob_shipping_ups extends Cartthrob_shipping
+class Cartthrob_shipping_ups extends ShippingPlugin
 {
     public $title = "ups_live_rates";
     public $overview = 'ups_overview';
@@ -357,7 +358,7 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
 
         $orig_state = 	($this->plugin_settings('origination_state'))? $this->plugin_settings('origination_state') : ee()->cartthrob_shipping_plugins->customer_location_defaults('state') ;
         $orig_zip = 	($this->plugin_settings('origination_zip'))? $this->plugin_settings('origination_zip') : ee()->cartthrob_shipping_plugins->customer_location_defaults("zip");
-        $orig_country_code = ($this->plugin_settings('orig_country_code'))? ee()->cartthrob_shipping_plugins->alpha2_country_code($this->plugin_settings('orig_country_code')) : ee()->cartthrob_shipping_plugins->alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults("country_code"));
+        $orig_country_code = ($this->plugin_settings('orig_country_code'))? alpha2_country_code($this->plugin_settings('orig_country_code')) : alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults("country_code"));
         $orig_res_com = ($this->plugin_settings('origination_res_com') == "RES")? 1: 0;
         $destination_res_com = ($this->plugin_settings('destination_res_com') == "RES")? 1: 0;
 
@@ -369,7 +370,7 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
         $shipping_city = ee()->cartthrob_shipping_plugins->customer_location_defaults('city') ;
         $shipping_state = ee()->cartthrob_shipping_plugins->customer_location_defaults('state') ;
         $shipping_zip = ee()->cartthrob_shipping_plugins->customer_location_defaults('zip') ;
-        $dest_country_code = ee()->cartthrob_shipping_plugins->alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults('country_code')) ;
+        $dest_country_code = alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults('country_code')) ;
         $container =  ee()->cartthrob_shipping_plugins->customer_location_defaults('container', $this->plugin_settings('container'));
         $dim_width = ee()->cartthrob_shipping_plugins->customer_location_defaults('width',$this->plugin_settings('def_width'));
         $dim_length = ee()->cartthrob_shipping_plugins->customer_location_defaults('length',$this->plugin_settings('def_length'));
@@ -584,12 +585,15 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
         }
         return $available_options;
     }
-    // END
-    public function plugin_shipping_options()
+
+    /**
+     * @return array
+     */
+    public function plugin_shipping_options(): array
     {
-        $options = array();
+        $options = [];
         // GETTING THE RATES FROM SESSION
-        $shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
+        $shipping_data = $this->core->cart->custom_data(ucfirst(get_class($this)));
 
         /*
         if (!$shipping_data)
@@ -598,6 +602,7 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
             $shipping_data = $this->get_live_rates();
         }
         */
+
         $shipping_data = $this->get_live_rates();
 
         if (!empty($shipping_data['option_value'] ))
@@ -613,14 +618,14 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
             }
         }
 
-
         return $options;
     }
 
     /**
+     * @param Cartthrob_cart $cart
      * @return Money
      */
-    public function get_shipping(): Money
+    public function rate(Cartthrob_cart $cart): Money
     {
         $cart_hash = $this->core->cart->custom_data('cart_hash');
 
@@ -643,9 +648,10 @@ class Cartthrob_shipping_ups extends Cartthrob_shipping
 
         $shipping_data =$this->core->cart->custom_data(ucfirst(get_class($this)));
 
-        if(!$this->core->cart->shipping_info('shipping_option'))
-        {
-            $temp_key = FALSE;
+        if(!$this->core->cart->shipping_info('shipping_option')) {
+
+            $temp_key = false;
+
             // if no option has been set, we'll get the cheapest option, and set that as the customer's shipping option.
             if (!empty($shipping_data['price']))
             {
