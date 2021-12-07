@@ -472,7 +472,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
             $RateInformation->addChild('NegotiatedRatesIndicator');
         }
 
-        $url = 'https://www.ups.com/ups.app/xml/Rate';
+        $url = 'https://onlinetools.ups.com/ups.app/xml/Rate';
 
         $data = (string)$access->asXML() . (string)$rating->asXML();
         $result = new SimpleXMLElement(ee()->cartthrob_shipping_plugins->curl_transaction($url, $data));
