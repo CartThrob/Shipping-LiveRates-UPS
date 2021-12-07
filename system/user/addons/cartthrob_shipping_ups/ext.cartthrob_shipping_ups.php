@@ -37,9 +37,6 @@ class Cartthrob_shipping_ups_ext
         ee('cartthrob:PluginService')->register(Cartthrob_shipping_ups::class);
     }
 
-    /**
-     *
-     */
     public function activate_extension()
     {
         ee()->db->insert('extensions', [
@@ -67,9 +64,6 @@ class Cartthrob_shipping_ups_ext
         ee()->db->update('extensions', ['version' => $this->version]);
     }
 
-    /**
-     *
-     */
     public function disable_extension()
     {
         ee()->db->where('class', __CLASS__);
