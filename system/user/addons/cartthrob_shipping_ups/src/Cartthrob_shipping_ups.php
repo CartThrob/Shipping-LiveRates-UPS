@@ -358,29 +358,29 @@ class Cartthrob_shipping_ups extends ShippingPlugin
         ee()->load->library('cartthrob_shipping_plugins');
         $this->core->cart->set_custom_data('shipping_error', '');
 
-        $orig_state = ($this->plugin_settings('origination_state')) ? $this->plugin_settings('origination_state') : ee()->cartthrob_shipping_plugins->customer_location_defaults('state');
-        $orig_zip = ($this->plugin_settings('origination_zip')) ? $this->plugin_settings('origination_zip') : ee()->cartthrob_shipping_plugins->customer_location_defaults('zip');
-        $orig_country_code = ($this->plugin_settings('orig_country_code')) ? alpha2_country_code($this->plugin_settings('orig_country_code')) : alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults('country_code'));
-        $orig_res_com = ($this->plugin_settings('origination_res_com') == 'RES') ? 1 : 0;
-        $destination_res_com = ($this->plugin_settings('destination_res_com') == 'RES') ? 1 : 0;
+        $orig_state = ($this->getSettings('origination_state')) ? $this->getSettings('origination_state') : ee()->cartthrob_shipping_plugins->customer_location_defaults('state');
+        $orig_zip = ($this->getSettings('origination_zip')) ? $this->getSettings('origination_zip') : ee()->cartthrob_shipping_plugins->customer_location_defaults('zip');
+        $orig_country_code = ($this->getSettings('orig_country_code')) ? alpha2_country_code($this->getSettings('orig_country_code')) : alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults('country_code'));
+        $orig_res_com = ($this->getSettings('origination_res_com') == 'RES') ? 1 : 0;
+        $destination_res_com = ($this->getSettings('destination_res_com') == 'RES') ? 1 : 0;
 
         // the following variables are set, so that we can maintain this code, and CT1's code easier. setting these variables allows us to keep some of the following code in parity
-        $rate_chart = $this->plugin_settings('rate_chart');
+        $rate_chart = $this->getSettings('rate_chart');
         $shipping_address = ee()->cartthrob_shipping_plugins->customer_location_defaults('address');
         $shipping_address2 = ee()->cartthrob_shipping_plugins->customer_location_defaults('address2');
         $shipping_city = ee()->cartthrob_shipping_plugins->customer_location_defaults('city');
         $shipping_state = ee()->cartthrob_shipping_plugins->customer_location_defaults('state');
         $shipping_zip = ee()->cartthrob_shipping_plugins->customer_location_defaults('zip');
         $dest_country_code = alpha2_country_code(ee()->cartthrob_shipping_plugins->customer_location_defaults('country_code'));
-        $container = ee()->cartthrob_shipping_plugins->customer_location_defaults('container', $this->plugin_settings('container'));
-        $dim_width = ee()->cartthrob_shipping_plugins->customer_location_defaults('width', $this->plugin_settings('def_width'));
-        $dim_length = ee()->cartthrob_shipping_plugins->customer_location_defaults('length', $this->plugin_settings('def_length'));
-        $dim_height = ee()->cartthrob_shipping_plugins->customer_location_defaults('height', $this->plugin_settings('def_height'));
+        $container = ee()->cartthrob_shipping_plugins->customer_location_defaults('container', $this->getSettings('container'));
+        $dim_width = ee()->cartthrob_shipping_plugins->customer_location_defaults('width', $this->getSettings('def_width'));
+        $dim_length = ee()->cartthrob_shipping_plugins->customer_location_defaults('length', $this->getSettings('def_length'));
+        $dim_height = ee()->cartthrob_shipping_plugins->customer_location_defaults('height', $this->getSettings('def_height'));
         // set default weight
         $weight_total = ($this->core->cart->weight() ? $this->core->cart->weight() : 1);
 
         if ($option_value == 'ALL') {
-            $product_id = $this->plugin_settings('product_id');
+            $product_id = $this->getSettings('product_id');
         } else {
             $product_id = $option_value;
         }
@@ -392,7 +392,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
                 'option_name' => [],
             ];
 
-        if (!$this->plugin_settings('access_key') || !$this->plugin_settings('username') || !$this->plugin_settings('password')) {
+        if (!$this->getSettings('access_key') || !$this->getSettings('username') || !$this->getSettings('password')) {
             $shipping['error_message'] = ee()->lang->line('shipping_settings_not_configured');
 
             return $shipping;
@@ -400,9 +400,9 @@ class Cartthrob_shipping_ups extends ShippingPlugin
 
         $access = new SimpleXMLElement('<AccessRequest xml:lang="en-US"></AccessRequest>');
 
-        $access->addChild('AccessLicenseNumber', $this->plugin_settings('access_key'));
-        $access->addChild('UserId', $this->plugin_settings('username'));
-        $access->addChild('Password', $this->plugin_settings('password'));
+        $access->addChild('AccessLicenseNumber', $this->getSettings('access_key'));
+        $access->addChild('UserId', $this->getSettings('username'));
+        $access->addChild('Password', $this->getSettings('password'));
 
         $rating = new SimpleXMLElement('<RatingServiceSelectionRequest xml:lang="en-US"></RatingServiceSelectionRequest>');
         $Request = $rating->addChild('Request');
@@ -417,7 +417,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
 
         $Shipment = $rating->addChild('Shipment');
         $Shipper = $Shipment->addChild('Shipper');
-        $Shipper->addChild('ShipperNumber', $this->plugin_settings('shipper_number'));
+        $Shipper->addChild('ShipperNumber', $this->getSettings('shipper_number'));
         $Address = $Shipper->addChild('Address');
         $Address->addChild('PostalCode', $orig_zip);
         $Address->addChild('CountryCode', $orig_country_code);
@@ -456,18 +456,18 @@ class Cartthrob_shipping_ups extends ShippingPlugin
 
         $Dimensions = $Package->addChild('Dimensions');
         $UnitOfMeasurement = $Dimensions->addChild('UnitOfMeasurement');
-        $UnitOfMeasurement->addChild('Code', $this->plugin_settings('length_code'));
+        $UnitOfMeasurement->addChild('Code', $this->getSettings('length_code'));
         $Dimensions->addChild('Length', $dim_length);
         $Dimensions->addChild('Width', $dim_width);
         $Dimensions->addChild('Height', $dim_height);
 
         $PackageWeight = $Package->addChild('PackageWeight');
         $WeightMeasurement = $PackageWeight->addChild('UnitOfMeasurement');
-        $weight_code = ($this->plugin_settings('length_code') == 'IN' ? 'LBS' : 'KGS');
+        $weight_code = ($this->getSettings('length_code') == 'IN' ? 'LBS' : 'KGS');
         $WeightMeasurement->addChild('Code', $weight_code);
         $PackageWeight->addChild('Weight', $weight_total);
 
-        if ($this->plugin_settings('use_negotiated_rates') == 'y') {
+        if ($this->getSettings('use_negotiated_rates') == 'y') {
             $RateInformation = $Shipment->addChild('RateInformation');
             $RateInformation->addChild('NegotiatedRatesIndicator');
         }
@@ -491,7 +491,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
         }
 
         if (isset($result->RatedShipment)) {
-            $use_negotiated_rates = $this->plugin_settings('use_negotiated_rates') == 'y' ? true : false;
+            $use_negotiated_rates = $this->getSettings('use_negotiated_rates') == 'y' ? true : false;
             foreach ($result->RatedShipment as $rating) {
                 if (!empty($rating->Service->Code)) {
                     // setting all of the prices. add handling values here.
@@ -511,7 +511,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
         // CHECKING THE PRESELECTED OPTIONS THAT ARE AVAILABLE
         $available_shipping = [];
         foreach ($shipping['option_value'] as $key => $value) {
-            if ($this->plugin_settings('c_' . $value) != 'n') {
+            if ($this->getSettings('c_' . $value) != 'n') {
                 $available_shipping['price'][$key] = $shipping['price'][$key];
                 $available_shipping['option_value'][$key] = $shipping['option_value'][$key];
                 $available_shipping['option_name'][$key] = $shipping['option_name'][$key];
@@ -553,7 +553,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
             }
         }
         foreach ($this->shipping_methods as $key => $method) {
-            if ($this->plugin_settings($prefix . $key) == 'y') {
+            if ($this->getSettings($prefix . $key) == 'y') {
                 $available_options[$key] = $method;
             }
         }
@@ -606,7 +606,7 @@ class Cartthrob_shipping_ups extends ShippingPlugin
 
         if ($this->core->cart->weight() <= 0) {
             // perhaps you have all digital items
-            if ($this->plugin_settings('no_shipping_on_zero_weight_carts')) {
+            if ($this->getSettings('no_shipping_on_zero_weight_carts')) {
                 return ee('cartthrob:MoneyService')->fresh();
             }
         }
@@ -633,8 +633,8 @@ class Cartthrob_shipping_ups extends ShippingPlugin
                 $this->shipping_option = $shipping_data['option_value'][$temp_key];
                 $this->core->cart->set_shipping_info('shipping_option', $shipping_data['option_value'][$temp_key]);
             } else {
-                $this->shipping_option = $this->plugin_settings('product_id');
-                $this->core->cart->set_shipping_info('shipping_option', $this->plugin_settings('product_id'));
+                $this->shipping_option = $this->getSettings('product_id');
+                $this->core->cart->set_shipping_info('shipping_option', $this->getSettings('product_id'));
             }
         } else {
             $this->shipping_option = $this->core->cart->shipping_info('shipping_option');
